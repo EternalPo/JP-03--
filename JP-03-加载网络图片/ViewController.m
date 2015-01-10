@@ -194,60 +194,111 @@
         cell.imageView.image = self.imageCaches[app.icon];
     } else {
         cell.imageView.image = [UIImage imageNamed:@"user_default"];
-        
-        // 判断下载操作是不是存在
-        if (self.operationCaches[app.icon] != nil) {
-            NSLog(@"正在玩命加载");
-        } else {
-            // 定义下载操作
-            NSBlockOperation *download = [NSBlockOperation blockOperationWithBlock:^{
-                // 耗时操作
-             
-                // 加载网络图片
-                NSURL *url = [NSURL URLWithString:app.icon];
-                
-                NSData *data = [NSData dataWithContentsOfURL:url];
-                
-                UIImage *image = [UIImage imageWithData:data];
-                
-                // 图片添加到图片缓冲池
-                if (image != nil) {
-                    [self.imageCaches setObject:image forKey:app.icon];
-                }
-                
-                
-                // 清除已经完成的下载操作
-                /**
-                 1. 可以节约内存
-                 2. 如果下载失败，可以重试
-                 3. 可以避免出现循环引用！
-                 */
-                // 清除下载操作
-
-                [self.operationCaches removeObjectForKey:app.icon];
-                
-                
-                // 通知主线程 刷新
-                [[NSOperationQueue mainQueue]addOperationWithBlock:^{
-                    // 刷新之前先判断图片是不是为空
-                    if (image != nil) {
-                        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
-                    }
-                }];
-            }];
-            
-            // 添加操作到队列
-            [self.opQueue addOperation:download];
-            [self.operationCaches setObject:download forKey:app.icon];
-        }
+        // 下载网络图片刷新设置表格
+        [self downloadWithIndexPath:indexPath];
     }
     
     // 返回cell
     return cell;
     
 }
-
-
+#pragma mark - 代码重构
+/**
+ 代码重构－抽代码
+ 
+ 目的：
+ 1. 相同的代码不要出现两次，可以保证今后的调整，只需要修改一个地方的代码
+ 2. 对于有些功能相对独立的代码，可以抽取出来作为一个自方法
+ 
+ 实际开发套路：
+ 在写代码的时候，分主方法和子方法
+ - 主方法：主要写各个子方法的调用，通过子方法的名称的串联，就可以看出主方法的主要工作！便于阅读和维护
+ - 子方法：专门处理一个独立的业务逻辑！可以重点测试！一旦测试完成，就可以不再看了！
+ 
+ 如果对整体业务逻辑进行调整的时候，子方法就会变成像积木一样可以搭建！
+ 
+ 步骤：
+ 
+ 1. 新建一个方法
+ 2. 把要抽取的代码复制到新方法中
+ - 要根据实际情况，调整参数
+ 3. 把原有代码，先注释掉！给自己一个后悔的机会！如果代码结构调整的大，还可以做一个参照！
+ 4. 增加新方法的调用
+ 5. 测试
+ 6. 删除注释代码
+ 7. 复查代码
+ - 修改注释
+ - 检查代码优化
+ 提示：在任何语言开发中，if 的深层嵌套都是非常忌讳的！
+ 原因
+ - 系统执行性能会变差！
+ - 阅读起来非常麻烦
+ 通常 if 的层次，能少就少！
+ 
+ 关于注释：注释是邪恶的！
+ 
+ 在实际编写代码的时候，注释不是越多越好！
+ *** 尤其在重构的时候，要重点检查注释的描述！
+ 
+ 什么地方应该加注释呢！
+ - .m 文件中，重点难点的逻辑！不加注释，时间长了自己也看不懂！
+ - .h 文件中，所有的方法，属性都应该加注释！因为 .h 是整个团队共同使用的！
+ 
+ 关于代码重构重要原则
+ - 小步走！
+ - 只要有修改，就有风险
+ - 不断测试自己的预期结果是否达成！
+ */
+- (void)downloadWithIndexPath:(NSIndexPath *)indexPath{
+    
+    JPAppInfo *app = self.appInfos[indexPath.row];
+    // 判断下载操作是不是存在
+    if (self.operationCaches[app.icon] != nil) {
+        NSLog(@"正在玩命加载");
+    } else {
+        
+        // 定义下载操作
+        NSBlockOperation *download = [NSBlockOperation blockOperationWithBlock:^{
+            // 耗时操作
+            
+            // 加载网络图片
+            NSURL *url = [NSURL URLWithString:app.icon];
+            
+            NSData *data = [NSData dataWithContentsOfURL:url];
+            
+            UIImage *image = [UIImage imageWithData:data];
+            
+            // 图片添加到图片缓冲池
+            if (image != nil) {
+                [self.imageCaches setObject:image forKey:app.icon];
+            }
+            
+            // 清除已经完成的下载操作
+            /**
+             1. 可以节约内存
+             2. 如果下载失败，可以重试
+             3. 可以避免出现循环引用！
+             */
+            // 清除下载操作
+            [self.operationCaches removeObjectForKey:app.icon];
+            
+            
+            // 通知主线程 刷新表格
+            [[NSOperationQueue mainQueue]addOperationWithBlock:^{
+                // 刷新之前先判断图片是不是为空
+                if (image != nil) {
+                    [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+                }
+            }];
+        }];
+        // 添加操作到队列
+        [self.opQueue addOperation:download];
+        [self.operationCaches setObject:download forKey:app.icon];
+    }
+    
+    
+    
+}
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
