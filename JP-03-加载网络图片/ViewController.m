@@ -176,6 +176,13 @@
         -如果有一个下载失败了，能够直接从操作缓冲池中移除，下次刷新重新下载
     解决办法：
         - 下载完成后直接移除缓冲池对应的下载操作
+     
+     *******
+     *** 细节问题：如果网络图片下载失败，直接设置图片缓冲区字典，会崩溃！
+     *** 下载失败，会不断刷新表格，需要判断图像是否真的获取
+     ===> 再高级的做法，如果下载失败，可以建立一个黑名单的数组，
+     存放所有下载失败的 URL，如果碰到黑名单中的URL，就不在下载！
+
      */
     
     if (self.imageCaches[app.icon] != nil) {
@@ -193,11 +200,11 @@
             NSBlockOperation *download = [NSBlockOperation blockOperationWithBlock:^{
                 // 耗时操作
                 // 模拟0行下载非常慢
-                if (indexPath.row == 0) {
-                    NSLog(@"-----");
-                    [NSThread sleepForTimeInterval:10.0];
-                }
-                
+//                if (indexPath.row == 0) {
+//                    NSLog(@"-----");
+//                    [NSThread sleepForTimeInterval:10.0];
+//                }
+//                
                 // 加载网络图片
                 NSURL *url = [NSURL URLWithString:app.icon];
                 
@@ -206,16 +213,20 @@
                 UIImage *image = [UIImage imageWithData:data];
                 
                 // 图片添加到图片缓冲池
-                [self.imageCaches setObject:image forKey:app.icon];
+                if (image != nil) {
+                    [self.imageCaches setObject:image forKey:app.icon];
+                }
                 
                 // 移除下载操作
                 [self.operationCaches removeObjectForKey:app.icon];
                 
                 
-                // 通知主线程 设置图片
+                // 通知主线程 刷新
                 [[NSOperationQueue mainQueue]addOperationWithBlock:^{
-                    
-                    [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+                    // 刷新之前先判断图片是不是为空
+                    if (image != nil) {
+                        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+                    }
                 }];
             }];
             
@@ -229,5 +240,8 @@
     // 返回cell
     return cell;
     
+}
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSLog(@"%@",self.operationCaches);
 }
 @end
