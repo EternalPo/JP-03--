@@ -16,6 +16,7 @@
 		181DA6351A615FAC006734D2 /* JP_03_______Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 181DA6341A615FAC006734D2 /* JP_03_______Tests.m */; };
 		181DA63F1A616179006734D2 /* apps.plist in Resources */ = {isa = PBXBuildFile; fileRef = 181DA63E1A616179006734D2 /* apps.plist */; };
 		181DA6421A61622D006734D2 /* JPAppInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 181DA6411A61622D006734D2 /* JPAppInfo.m */; };
+		181DA6451A616F8D006734D2 /* JPAppCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 181DA6441A616F8D006734D2 /* JPAppCell.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +46,8 @@
 		181DA63E1A616179006734D2 /* apps.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = apps.plist; sourceTree = "<group>"; };
 		181DA6401A61622D006734D2 /* JPAppInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JPAppInfo.h; sourceTree = "<group>"; };
 		181DA6411A61622D006734D2 /* JPAppInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JPAppInfo.m; sourceTree = "<group>"; };
+		181DA6431A616F8D006734D2 /* JPAppCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JPAppCell.h; sourceTree = "<group>"; };
+		181DA6441A616F8D006734D2 /* JPAppCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JPAppCell.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +93,8 @@
 				181DA61D1A615FAB006734D2 /* AppDelegate.m */,
 				181DA61F1A615FAB006734D2 /* ViewController.h */,
 				181DA6201A615FAB006734D2 /* ViewController.m */,
+				181DA6431A616F8D006734D2 /* JPAppCell.h */,
+				181DA6441A616F8D006734D2 /* JPAppCell.m */,
 				181DA6401A61622D006734D2 /* JPAppInfo.h */,
 				181DA6411A61622D006734D2 /* JPAppInfo.m */,
 				181DA6221A615FAB006734D2 /* Main.storyboard */,
@@ -231,6 +236,7 @@
 			files = (
 				181DA6211A615FAB006734D2 /* ViewController.m in Sources */,
 				181DA6421A61622D006734D2 /* JPAppInfo.m in Sources */,
+				181DA6451A616F8D006734D2 /* JPAppCell.m in Sources */,
 				181DA61E1A615FAB006734D2 /* AppDelegate.m in Sources */,
 				181DA61B1A615FAB006734D2 /* main.m in Sources */,
 			);

@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "JPAppInfo.h"
+#import "JPAppCell.h"
 
 @interface ViewController ()
 /**
@@ -85,7 +86,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
     // 创建cell
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"appCell"];
+    JPAppCell *cell = [JPAppCell appCellWithTableView:tableView];
     
     JPAppInfo *app = self.appInfos[indexPath.row];
     
@@ -99,6 +100,12 @@
      原因分析：因为是异步执行 是在另一个线程中，在主线程中已经返回了cell而在另一个线程中，图片还没有下载完成，那么，当图片下载完成的时候，显示出的cell中此时imageView的大小为空，当点击cell时，有应为这个cell是系统的cell所以会调用 layoutSubviews方法 重新布局cell的子控件的位子 所以在 用一个占位图 来先分配到一个位子
      */
     // 占位图
+    /**
+     *  
+     问题 ：使用占位图的问题，当用户交互的时候 图片的尺寸会变小，因为之前的占位图的尺寸过大，当用户交互的时候，会从新布局子控件的位置和大小，会根据当前图片的大小来设置
+     
+     解决思路 ：因为是系统用的cell
+     */
     cell.imageView.image = [UIImage imageNamed:@"user_default"];
     
     // 添加 操作到循环
@@ -111,7 +118,7 @@
         NSData *data = [NSData dataWithContentsOfURL:url];
 
         UIImage *image = [UIImage imageWithData:data];
-//        [NSThread sleepForTimeInterval:0.2f];
+        [NSThread sleepForTimeInterval:1.0f];
         // 通知主线程 设置图片
         [[NSOperationQueue mainQueue]addOperationWithBlock:^{
             
