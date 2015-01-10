@@ -205,11 +205,16 @@
                 
                 UIImage *image = [UIImage imageWithData:data];
                 
+                // 图片添加到图片缓冲池
                 [self.imageCaches setObject:image forKey:app.icon];
+                
+                // 移除下载操作
+                [self.operationCaches removeObjectForKey:app.icon];
+                
+                
                 // 通知主线程 设置图片
                 [[NSOperationQueue mainQueue]addOperationWithBlock:^{
                     
-                    //                cell.imageView.image = image;
                     [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
                 }];
             }];
@@ -219,10 +224,7 @@
             [self.operationCaches setObject:download forKey:app.icon];
         }
     }
-    // 打印操作队列中的操作数
-    NSLog(@"===> 操作数： %lu", (unsigned long)self.opQueue.operationCount);
     NSLog(@"%@", self.operationCaches);
-    NSLog(@"%@", self.imageCaches);
     
     // 返回cell
     return cell;
