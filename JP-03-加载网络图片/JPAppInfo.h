@@ -22,10 +22,6 @@
  */
 @property (nonatomic, copy) NSString *name;
 
-/**
- 网络下载的image
- */
-@property (nonatomic, strong) UIImage *image;
 
 /**
  *  通过字典创建模型

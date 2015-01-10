@@ -24,6 +24,10 @@
  *  操作缓存池
  */
 @property (nonatomic, strong) NSMutableDictionary *operationCaches;
+/**
+ *  图片缓冲池
+ */
+@property (nonatomic, strong) NSMutableDictionary *imageCaches;
 @end
 
 @implementation ViewController
@@ -51,10 +55,6 @@
     }
     return _appInfos;
 }
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-}
 /**
  *  懒加载全局队列
  */
@@ -65,10 +65,6 @@
     return _opQueue;
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
 /**
  *  懒加载操作缓存池
  */
@@ -77,6 +73,23 @@
         _operationCaches = [NSMutableDictionary dictionary];
     }
     return _operationCaches;
+}
+/**
+ *  懒加载图片缓冲池
+ */
+- (NSMutableDictionary *)imageCaches {
+    if (_imageCaches== nil) {
+        _imageCaches = [NSMutableDictionary dictionary];
+    }
+    return _imageCaches;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view, typically from a nib.
+}
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
 }
 
 #pragma mark - 数据源方法
@@ -132,6 +145,7 @@
      解决，让模型添加一个新的属性image 
      解决办法：使用 MVC 来在图像下载结束后，刷新指定的行
      
+     *******
      新的问题：如果某张下载速度非常慢，用户快速来回滚动表格，会造成下载操作会重复创建！
      直接的结果：用户网络流量的浪费！
      思路：创建下载操作前，首先检查缓冲池中有没有下载操作
@@ -145,14 +159,29 @@
      如果下载的图片中有两张相同的图片，那么
      如果用数组 分布在不同的行，还会多次下载
      如果用字典， 不用多次下载，因为下载路径相同
+     ********
+     新的问题，当前下载的图片是保存在模型中，当发生内存警告时，程序需要释放内存
+     目前图片下载完成之后，是保存在模型中的！如果应用程序运行过程中，出现内存警告！需要释放内存！
+     图片如果保存在模型中，当需要释放内存的时候，不好释放！
      
-
+     假设一共有2000条记录，记录2000张图片在内存！
+     
+     解决办法：建立图片缓冲池！如果内存警告，直接清空图片缓存即可！
+     目标：图片不能保存在模型中！
+     
+     **********
+     新问题： 当图片下载完成后，下载操作不需要在存在，即操作缓冲池中的内容没必要留着
+     如果一直保留着的问题：
+        -内存会无谓的消耗
+        -如果有一个下载失败了，能够直接从操作缓冲池中移除，下次刷新重新下载
+    解决办法：
+        - 下载完成后直接移除缓冲池对应的下载操作
      */
     
-    if (app.image != nil) {
+    if (self.imageCaches[app.icon] != nil) {
         NSLog(@"没有下载图片");
         
-        cell.imageView.image = app.image;
+        cell.imageView.image = self.imageCaches[app.icon];
     } else {
         cell.imageView.image = [UIImage imageNamed:@"user_default"];
         
@@ -176,7 +205,7 @@
                 
                 UIImage *image = [UIImage imageWithData:data];
                 
-                app.image = image;
+                [self.imageCaches setObject:image forKey:app.icon];
                 // 通知主线程 设置图片
                 [[NSOperationQueue mainQueue]addOperationWithBlock:^{
                     
@@ -192,6 +221,8 @@
     }
     // 打印操作队列中的操作数
     NSLog(@"===> 操作数： %lu", (unsigned long)self.opQueue.operationCount);
+    NSLog(@"%@", self.operationCaches);
+    NSLog(@"%@", self.imageCaches);
     
     // 返回cell
     return cell;
