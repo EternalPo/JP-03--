@@ -37,7 +37,7 @@
             // 添加模型到数组
             [arrayM addObject:appInfo];
         }];
-        _appInfos = [arrayM copy];
+        _appInfos = [arrayM copy]; // 用copy 能够实现可变转不可变，而且不会相影响
 
     }
     return _appInfos;
@@ -67,6 +67,19 @@
     cell.textLabel.text = app.name;
     
     cell.detailTextLabel.text = app.download;
+    
+    // 加载网络图片
+    NSURL *url = [NSURL URLWithString:app.icon];
+    
+    NSData *data = [NSData dataWithContentsOfURL:url];
+    
+    UIImage *image = [UIImage imageWithData:data];
+    
+    cell.imageView.image = image;
+    
+    
+    
+    
     
     return cell;
     
