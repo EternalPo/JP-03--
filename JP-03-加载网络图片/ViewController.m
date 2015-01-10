@@ -182,6 +182,9 @@
      *** 下载失败，会不断刷新表格，需要判断图像是否真的获取
      ===> 再高级的做法，如果下载失败，可以建立一个黑名单的数组，
      存放所有下载失败的 URL，如果碰到黑名单中的URL，就不在下载！
+     ****************
+     *** 问题：会出现循环引用吗？
+     借助 dealloc 辅助判断
 
      */
     
@@ -199,12 +202,7 @@
             // 定义下载操作
             NSBlockOperation *download = [NSBlockOperation blockOperationWithBlock:^{
                 // 耗时操作
-                // 模拟0行下载非常慢
-//                if (indexPath.row == 0) {
-//                    NSLog(@"-----");
-//                    [NSThread sleepForTimeInterval:10.0];
-//                }
-//                
+             
                 // 加载网络图片
                 NSURL *url = [NSURL URLWithString:app.icon];
                 
@@ -217,7 +215,15 @@
                     [self.imageCaches setObject:image forKey:app.icon];
                 }
                 
-                // 移除下载操作
+                
+                // 清除已经完成的下载操作
+                /**
+                 1. 可以节约内存
+                 2. 如果下载失败，可以重试
+                 3. 可以避免出现循环引用！
+                 */
+                // 清除下载操作
+
                 [self.operationCaches removeObjectForKey:app.icon];
                 
                 
@@ -235,13 +241,19 @@
             [self.operationCaches setObject:download forKey:app.icon];
         }
     }
-    NSLog(@"%@", self.operationCaches);
     
     // 返回cell
     return cell;
     
 }
+
+
+
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     NSLog(@"%@",self.operationCaches);
+}
+- (void)dealloc {
+    NSLog(@"我去了");
 }
 @end
