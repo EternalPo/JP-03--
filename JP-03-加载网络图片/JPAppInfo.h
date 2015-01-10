@@ -6,7 +6,7 @@
 //  Copyright (c) 2015年 soulPo. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @interface JPAppInfo : NSObject
 /**
@@ -22,6 +22,10 @@
  */
 @property (nonatomic, copy) NSString *name;
 
+/**
+ 网络下载的image
+ */
+@property (nonatomic, strong) UIImage *image;
 
 /**
  *  通过字典创建模型

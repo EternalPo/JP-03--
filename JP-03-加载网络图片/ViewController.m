@@ -20,6 +20,10 @@
  *  全局队列
  */
 @property (nonatomic, strong) NSOperationQueue *opQueue;
+/**
+ *  操作缓存池
+ */
+@property (nonatomic, strong) NSMutableDictionary *operationCaches;
 @end
 
 @implementation ViewController
@@ -65,6 +69,15 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+/**
+ *  懒加载操作缓存池
+ */
+- (NSMutableDictionary *)operationCaches {
+    if (_operationCaches== nil) {
+        _operationCaches = [NSMutableDictionary dictionary];
+    }
+    return _operationCaches;
+}
 
 #pragma mark - 数据源方法
 /**
@@ -93,6 +106,7 @@
     cell.textLabel.text = app.name;
     
     cell.detailTextLabel.text = app.download;
+    // 设置图片
     /**
      *
       第二种 -- 异步加载图片，在后台加载
@@ -104,29 +118,82 @@
      *  
      问题 ：使用占位图的问题，当用户交互的时候 图片的尺寸会变小，因为之前的占位图的尺寸过大，当用户交互的时候，会从新布局子控件的位置和大小，会根据当前图片的大小来设置
      
-     解决思路 ：因为是系统用的cell
+     解决思路 ：因为是系统用的cell，所以自定一个cell设置cell的位子即可 
+     
+     问题：如果图片下载速度不一样，用户又来回滚动cell，可能出现"图片错行"的问题
+     分析：
+     每一次都在直接给cell的图像设置数值，而cell是变化的，可以重用的，不固定的！
+     
+     谁是固定的？每一行的模型是固定的！
+     
+     MVC 设计模式，C(控制器) 让 V(视图) 显示 M(模型)
+     
+     目前的实际情况，C 让 (不固定的)V 显示不固定的 图像，忽略模型
+     解决，让模型添加一个新的属性image 
+     解决办法：使用 MVC 来在图像下载结束后，刷新指定的行
+     
+     新的问题：如果某张下载速度非常慢，用户快速来回滚动表格，会造成下载操作会重复创建！
+     直接的结果：用户网络流量的浪费！
+     思路：创建下载操作前，首先检查缓冲池中有没有下载操作
+        -如果有，等待下载完成，什么都不做
+        -如果没有，创建下载操作
+     问题：缓存池的选取（容器： 数组、字典、set）
+     数组：有序 --》indexPath
+     字典： key --》URL
+     set： 无序
+     取舍思考： 
+     如果下载的图片中有两张相同的图片，那么
+     如果用数组 分布在不同的行，还会多次下载
+     如果用字典， 不用多次下载，因为下载路径相同
+     
+
      */
-    cell.imageView.image = [UIImage imageNamed:@"user_default"];
     
-    // 添加 操作到循环
-    [self.opQueue addOperationWithBlock:^{
+    if (app.image != nil) {
+        NSLog(@"没有下载图片");
         
-        // 耗时操作
-        // 加载网络图片
-        NSURL *url = [NSURL URLWithString:app.icon];
-
-        NSData *data = [NSData dataWithContentsOfURL:url];
-
-        UIImage *image = [UIImage imageWithData:data];
-        [NSThread sleepForTimeInterval:1.0f];
-        // 通知主线程 设置图片
-        [[NSOperationQueue mainQueue]addOperationWithBlock:^{
+        cell.imageView.image = app.image;
+    } else {
+        cell.imageView.image = [UIImage imageNamed:@"user_default"];
+        
+        // 判断下载操作是不是存在
+        if (self.operationCaches[app.icon] != nil) {
+            NSLog(@"正在玩命加载");
+        } else {
+            // 定义下载操作
+            NSBlockOperation *download = [NSBlockOperation blockOperationWithBlock:^{
+                // 耗时操作
+                // 模拟0行下载非常慢
+                if (indexPath.row == 0) {
+                    NSLog(@"-----");
+                    [NSThread sleepForTimeInterval:10.0];
+                }
+                
+                // 加载网络图片
+                NSURL *url = [NSURL URLWithString:app.icon];
+                
+                NSData *data = [NSData dataWithContentsOfURL:url];
+                
+                UIImage *image = [UIImage imageWithData:data];
+                
+                app.image = image;
+                // 通知主线程 设置图片
+                [[NSOperationQueue mainQueue]addOperationWithBlock:^{
+                    
+                    //                cell.imageView.image = image;
+                    [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+                }];
+            }];
             
-            cell.imageView.image = image;
-        }];
-        
-    }];
- 
+            // 添加操作到队列
+            [self.opQueue addOperation:download];
+            [self.operationCaches setObject:download forKey:app.icon];
+        }
+    }
+    // 打印操作队列中的操作数
+    NSLog(@"===> 操作数： %lu", (unsigned long)self.opQueue.operationCount);
+    
+    // 返回cell
     return cell;
     
 }
